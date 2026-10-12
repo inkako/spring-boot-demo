@@ -1,0 +1,15 @@
+server:
+  port: 19090
+
+spring:
+  application:
+    name: spring-boot-demo
+
+# 文字贴图字体注册表：将语义类型别名映射到 classpath 下的字体文件
+# 请求时只需传 fontType 即可选取对应字体，无需记忆具体文件名
+txtonimg:
+  fonts:
+    sans: classpath:fonts/NotoSansSC-Medium.ttf        # 无衬线（思源黑体）
+    serif: classpath:fonts/NotoSerifSC-SemiBold.ttf     # 衬线（思源宋体）
+    rounded: classpath:fonts/ResourceHanRoundedCN-Medium.ttf  # 圆体
+    oblique: classpath:fonts/SmileySans-Oblique.ttf     # 斜体（得意黑）

@@ -1,0 +1,139 @@
+# 文字贴图接口文档
+
+| 项目 | 内容 |
+| ---- | ---- |
+| 文档版本 | v1.1 |
+| 更新日期 | 2026-10-10 |
+| 提供方 | 中央媒资 |
+| 面向 | 互娱 |
+
+---
+
+## 1. 接口说明
+
+将若干段文字按设计稿给定的固定区域渲染到背景图上，合成一张海报，直接返回 PNG 图片。
+
+---
+
+## 2. 基本信息
+
+| 项目 | 说明 |
+| ---- | ---- |
+| 接口路径 | `POST /xxx/api/txtonimg` |
+| 请求格式 | `Content-Type: application/json` |
+| 响应格式 | `Content-Type: image/png`（二进制图片流） |
+| 响应缓存 | `Cache-Control: no-store`（请勿缓存，每次都实时合成） |
+| 幂等性 | 相同入参产出相同图片 |
+
+---
+
+## 3. 请求参数
+
+### 3.1 根对象
+
+| 字段 | 类型 | 必填 | 默认值 | 说明 |
+| ---- | ---- | ---- | ------ | ---- |
+| background | String | 是 | - | 背景图来源，支持三种格式，见 3.3 |
+| scale | Integer | 否 | 2 | 超采样倍率：按 scale 倍尺寸建透明画布，画完再缩小，让文字边缘更平滑。 |
+| regions | List&lt;TextRegion&gt; | 是 | - | 文字区域列表，见 3.2 |
+
+### 3.2 文字区域 `regions[]`
+
+坐标基于**设计稿像素坐标系（96dpi）**，须与所选背景图模板配套（由设计稿给定）。
+
+| 字段 | 类型 | 必填 | 参考值 | 说明 |
+| ---- | ---- | ---- | ------ | ---- |
+| x | int | 是 | 200 | 区域左上角 x（px） |
+| y | int | 是 | 400 | 区域左上角 y（px） |
+| w | int | 是 | 670 | 区域宽度（px） |
+| h | int | 是 | 720 | 区域高度（px） |
+| text | String | 是 | 中文与 English 混排示例 | 文字内容；支持 `\n` 强制换行，中英文混排自动换行，英文单词不拆分 |
+| fontType | String | 是 | `rounded` | 字体别名，推荐使用，可选值见 3.4 |
+| fontStyle | int | 是 | 0 | 字体样式：0=正常, 1=粗体, 2=斜体, 3=粗斜体 |
+| fontSize | float | 是 | 48 | 字号 |
+| fontSizeUnit | String | 是 | `px` | 字号单位：`px` |
+| lineHeight | float | 是 | 1.5 | 行高倍数，实际行距 = fontSize × lineHeight |
+| color | String | 是 | `#000000` | 文字颜色：`#RRGGBB`  |
+| align | String | 是 | `left` | 框内水平对齐：`left` / `center` / `right` |
+| valign | String | 是 | `top` | 框内垂直对齐：`top` / `middle` / `bottom` |
+| clipOverflow | boolean | 是 | true | 文字超出区域高度时是否截断：true=丢弃超出的行，false=照常绘制 |
+
+### 3.3 background 支持的三种格式
+
+| 格式 | 示例 | 说明 |
+| ---- | ---- | ---- |
+| HTTP(S) URL | `http://localhost:19090/textonimg/%E5%8D%A1%E7%89%87/02@3x.png` | 中文路径需 URL 编码 |
+| data URI | `data:image/png;base64,iVBORw0KG...` | base64 内联图片 |
+| 本地文件路径 | `/data/templates/card.png` | 服务端文件系统可访问的绝对路径 |
+
+> 同一模板请始终使用**完全相同**的来源字符串（服务端按字符串缓存背景图，字符串变化会导致缓存不命中）。
+
+### 3.4 可选字体（fontType）
+
+| 值 | 字体 | 说明 |
+| -- | ---- | ---- |
+| sans | 思源黑体（Noto Sans SC Medium） | 无衬线 |
+| serif | 思源宋体（Noto Serif SC SemiBold） | 衬线 |
+| rounded | 圆体（ResourceHan Rounded CN Medium） | 圆体 |
+| oblique | 得意黑（Smiley Sans Oblique） | 斜体 |
+
+---
+
+## 4. 请求示例
+
+```json
+{
+  "background": "http://localhost:19090/textonimg/%E5%8D%A1%E7%89%87/02@3x.png",
+  "scale": 2,
+  "regions": [
+    {
+      "x": 200,
+      "y": 400,
+      "w": 670,
+      "h": 720,
+      "text": "中文与 English 混排示例\n第二行文字",
+      "fontType": "rounded",
+      "fontSize": 28,
+      "fontSizeUnit": "px",
+      "lineHeight": 1.6,
+      "color": "#19EEFF",
+      "align": "left",
+      "valign": "top"
+    }
+  ]
+}
+```
+
+cURL：
+
+```bash
+curl -X POST http://localhost:19090/api/poster \
+  -H 'Content-Type: application/json' \
+  -d @poster-request.json \
+  -o poster.png
+```
+
+---
+
+## 5. 响应说明
+
+### 5.1 成功
+
+- 状态码：`200 OK`
+- Header：`Content-Type: image/png`、`Cache-Control: no-store`
+- Body：PNG 图片二进制流，直接保存即可
+
+### 5.2 失败
+
+| HTTP 状态码 | 触发场景 | 排查建议 |
+| ----------- | -------- | -------- |
+| 400 | JSON 格式错误、Content-Type 不是 `application/json` | 检查请求体与 Header |
+| 500 | 背景图加载/解码失败、渲染异常 | 确认 background 可访问且为有效图片；错误信息见响应体 `message`（形如 `背景图加载失败`） |
+
+---
+
+## 6. 对接注意事项
+
+1. **坐标契约**：`x/y/w/h` 必须与背景图模板的设计稿坐标一致，更换模板需同步更换区域坐标。
+2. **文字溢出**：单行超宽不会自动缩小字号，请调用方自行控制文案长度；纵向溢出由 `clipOverflow` 控制。
+3. **背景图稳定性**：不要在 background URL 上附加时间戳等随机参数，否则服务端缓存失效、每次重新下载。

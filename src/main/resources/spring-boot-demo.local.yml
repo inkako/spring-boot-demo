@@ -1,0 +1,70 @@
+server:
+  port: 18899
+
+logging:
+  level:
+    root: info
+
+task:
+  scheduler:
+    fixedRate: 4000
+
+feign:
+  circuitbreaker:
+    enabled: true
+  client:
+    config:
+      default:
+        connect-timeout: 10000
+        read-timeout: 60000
+
+# 微服务容错体系
+# ├── 熔断（Circuit Breaker）+ 降级（Fallback）    ← Resilience4j
+# ├── 限流（Rate Limiter）                       ← Resilience4j
+# ├── 超时控制（TimeLimiter）                     ← Resilience4j
+# ├── 重试（Retry）                               ← Resilience4j
+# ├── 舱壁隔离（Bulkhead）                        ← Resilience4j
+# └── 缓存（Cache）                               ← Resilience4j
+# Resilience4j 属于客户端侧的容错/弹性（Resilience）库（当然也适用于服务端保护自己的接口/逻辑），
+# 属于 Spring Cloud 生态中 Circuit Breaker 抽象层的实现，对应规范是 Spring Cloud CircuitBreaker。
+
+# CLOSED（正常放行）
+#   │
+#   │ 失败率 ≥ 50%（且调用次数 ≥ 20）
+#   ▼
+# OPEN（全部走 fallback，不请求下游）
+#   │
+#   │ 等待 30s
+#   ▼
+# HALF_OPEN（放行 5 次试探调用）
+#   │
+#   ├── 失败率 < 50% → CLOSED（恢复）
+#   └── 失败率 ≥ 50% → OPEN（继续熔断 30s）
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        # 滑动窗口类型。COUNT_BASED 表示按调用次数统计（最近 N 次调用）。另一种是 TIME_BASED，按时间窗口统计（最近 N 秒内的调用）
+        sliding-window-type: COUNT_BASED
+        # 滑动窗口大小。配合上面的类型，表示统计最近 20 次调用的成功/失败率。比如这 20 次里有 12 次失败（60%），就超过了下面的阈值
+        sliding-window-size: 20
+        # 失败率阈值（百分比）。当滑动窗口内的失败率 ≥ 50% 时，熔断器从 CLOSED（关闭/正常）→ OPEN（打开/熔断）。OPEN 状态下所有请求直接走 fallback，不再调用下游。
+        failure-rate-threshold: 50
+        # 熔断器打开后等待多久再转为 HALF_OPEN（半开状态）。这 30 秒内所有请求直接走 fallback。30 秒后进入半开状态，允许少量请求试探下游是否恢复
+        wait-duration-in-open-state: 30s
+        #半开状态下允许通过多少次调用来探测下游。这 5 次调用会真实打到下游服务，根据结果判断：
+        #  如果失败率仍 ≥ 50% → 回到 OPEN（继续熔断）
+        # 如果失败率 < 50% → 回到 CLOSED（恢复正常）
+        permitted-number-of-calls-in-half-open-state: 5
+        # 熔断器启动后，至少积累多少次调用才开始计算失败率。防止只调用了 2-3 次就因 1 次失败而算出 50% 失败率导致误熔断。
+        # 与 sliding-window-size 配合使用，确保统计有足够样本。
+        minimum-number-of-calls: 20
+    instances:
+      instanceA:
+        base-config: default
+  timelimiter:
+    configs:
+      default:
+        # timelimiter timeout 必须 ≥ feign read-timeout，
+        # 否则 timelimiter 总是先超时，feign 的 read-timeout 形同虚设
+        timeout-duration: 60s

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="10 seconds">
+    <springProperty scope="context" name="application.name" source="spring.application.name" defaultValue="spring-boot-demo"/>
+
+    <!-- 日志格式 -->
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger{36}:%line %cyan(>>>) %msg%n"/>
+    <property name="FILE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger{36}:%line [%X{traceId}] [%X{spanId}] %cyan(>>>) %msg%n"/>
+    <property name="ACCESS_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%msg] [%X{requestId}] [%X{remoteIP}] [%X{requestMethod} %X{contentType} %X{requestURI}] [%X{responseTime}]%n"/>
+    <!-- 日志文件路径 -->
+    <springProfile name="local">
+        <property name="LOG_HOME" value="./logs/"/>
+    </springProfile>
+    <springProfile name="online,onlinetest">
+        <property name="LOG_HOME" value="/data/logs_data/"/>
+    </springProfile>
+    <property name="LOG_FILE" value="${LOG_HOME}/${application.name}.log"/>
+    <property name="ERROR_LOG_FILE" value="${LOG_HOME}/${application.name}-error.log"/>
+
+    <!-- 滚动策略参数 -->
+    <property name="MAX_FILE_SIZE" value="100MB"/>
+    <property name="MAX_HISTORY" value="31"/>
+    <property name="TOTAL_SIZE_CAP" value="10GB"/>
+
+    <!-- ===============================Appenders=============================== -->
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 主日志文件输出（DEBUG 及以上级别） -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}</file>
+        <!-- 滚动策略：基于时间和大小 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${application.name}.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 只记录 DEBUG 及以上级别的日志 -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+    </appender>
+
+    <!-- 错误日志文件输出（ERROR 级别） -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${ERROR_LOG_FILE}</file>
+        <!-- 滚动策略：基于时间和大小 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/${application.name}-error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>${MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${TOTAL_SIZE_CAP}</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <!-- 只记录 ERROR 级别的日志 -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <!-- 异步日志配置 -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE"/>
+        <queueSize>1024</queueSize>
+        <discardingThreshold>20</discardingThreshold>
+        <!-- 每次日志调用时生成调用栈，有一定性能开销。-->
+        <includeCallerData>true</includeCallerData>
+    </appender>
+
+    <appender name="ASYNC_ERROR_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="ERROR_FILE"/>
+        <queueSize>1024</queueSize>
+        <discardingThreshold>20</discardingThreshold>
+        <!-- 每次日志调用时生成调用栈，有一定性能开销。-->
+        <includeCallerData>true</includeCallerData>
+    </appender>
+
+    <!-- ===============================按环境区分日志配置=============================== -->
+    <springProfile name="local">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR_FILE"/>
+        </root>
+        <!-- 业务日志 -->
+        <!-- 关键组件库 -->
+        <logger name="org.springframework" level="INFO"/>
+        <!-- 其它第三方库 -->
+        <logger name="io.netty" level="INFO"/>
+        <logger name="io.lettuce" level="INFO"/>
+        <logger name="org.apache" level="INFO"/>
+    </springProfile>
+    <springProfile name="onlinetest">
+        <root level="INFO">
+            <appender-ref ref="ASYNC_FILE"/>
+        </root>
+        <!-- 业务日志 -->
+        <!-- 关键组件库 -->
+        <logger name="org.springframework" level="INFO"/>
+        <!-- 其它第三方库 -->
+        <logger name="io.netty" level="WARN"/>
+        <logger name="io.lettuce" level="WARN"/>
+        <logger name="org.apache" level="WARN"/>
+    </springProfile>
+    <springProfile name="online">
+        <root level="INFO">
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR_FILE"/>
+        </root>
+        <!-- 业务日志记录 -->
+        <!-- 关键组件库记录 -->
+        <logger name="org.springframework" level="WARN"/>
+        <!-- 其它第三方库记录 -->
+        <logger name="io.netty" level="WARN"/>
+        <logger name="io.lettuce" level="WARN"/>
+        <logger name="org.apache" level="WARN"/>
+    </springProfile>
+
+    <!-- ===============================特定组件的日志级别=============================== -->
+    <logger name="com.alibaba.cloud.nacos.configdata" level="DEBUG"/>
+    <logger name="org.springframework.boot.actuate" level="INFO"/>
+    <logger name="org.springframework.cloud.client.discovery" level="INFO"/>
+</configuration>

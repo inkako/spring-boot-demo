@@ -1,0 +1,71 @@
+spring:
+  config:
+    import:
+      - nacos:${spring.application.name}.yml
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848
+      username: nacos
+      password: nacos
+      discovery:
+        namespace: development
+      config:
+        namespace: development
+
+# history
+#jasypt:
+#  encryptor:
+#    password: jasypt
+#    algorithm: PBEWithMD5AndDES
+#    iv-generator-classname: org.jasypt.iv.NoIvGenerator
+#    property:
+#      prefix: ENC(
+#      suffix: )
+
+# local
+#jasypt:
+#  encryptor:
+#    password: rnqNqIwRgPo2FA/eIUoDsFC7mWTVfam5
+#    algorithm: PBEWITHHMACSHA512ANDAES_256
+#    key-obtention-iterations: 1000
+#    pool-size: 1
+#    salt-generator-classname: org.jasypt.salt.RandomSaltGenerator
+#    iv-generator-classname: org.jasypt.iv.RandomIvGenerator
+#    string-output-type: base64
+#    provider-name: SunJCE
+#    proxy-property-sources: false
+#    property:
+#      prefix: ENC(
+#      suffix: )
+
+# onlinetest
+#jasypt:
+#  encryptor:
+#    password: rnqNqIwRgPo2FA/eIUoDsFC7mWTVfam5
+#    algorithm: PBEWITHHMACSHA512ANDAES_256
+#    key-obtention-iterations: 1000
+#    pool-size: 1
+#    salt-generator-classname: org.jasypt.salt.RandomSaltGenerator
+#    iv-generator-classname: org.jasypt.iv.RandomIvGenerator
+#    string-output-type: base64
+#    provider-name: SunJCE
+#    proxy-property-sources: false
+#    property:
+#      prefix: ENC(
+#      suffix: )
+
+# online
+jasypt:
+  encryptor:
+    password: cN1NfFYZSyI3GuEQULgfWvodVweN12H6
+    algorithm: PBEWITHHMACSHA512ANDAES_256
+    key-obtention-iterations: 1000
+    pool-size: 1
+    salt-generator-classname: org.jasypt.salt.RandomSaltGenerator
+    iv-generator-classname: org.jasypt.iv.RandomIvGenerator
+    string-output-type: base64
+    provider-name: SunJCE
+    proxy-property-sources: false
+    property:
+      prefix: ENC(
+      suffix: )
