@@ -9,7 +9,6 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
 import java.util.Date;
 
 @Slf4j

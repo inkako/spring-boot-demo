@@ -8,7 +8,7 @@ spring:
       username: nacos
       password: nacos
       discovery:
-        namespace: development
+        namespace: public
       config:
         namespace: development
 
