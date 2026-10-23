@@ -1,4 +1,4 @@
-package com.example.demo.modules.mongodb;
+package com.example.demo.mongodb;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

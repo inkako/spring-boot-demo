@@ -1,6 +1,6 @@
-package com.example.demo.modules.txtonimg;
+package com.example.demo.txtonimg;
 
-import com.example.demo.modules.txtonimg.request.TextRegion;
+import com.example.demo.txtonimg.request.TextRegion;
 
 import lombok.extern.slf4j.Slf4j;
 

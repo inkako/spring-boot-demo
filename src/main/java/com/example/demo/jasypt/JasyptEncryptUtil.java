@@ -1,4 +1,4 @@
-package com.example.demo.modules.jasypt;
+package com.example.demo.jasypt;
 
 import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
 import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;

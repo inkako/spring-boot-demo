@@ -1,4 +1,4 @@
-package com.example.demo.modules.txtonimg.request;
+package com.example.demo.txtonimg.request;
 
 /**
  * 一个可写文字的固定区域（背景图与区域坐标均由设计稿给定）。

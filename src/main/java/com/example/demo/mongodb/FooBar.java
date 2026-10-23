@@ -1,4 +1,4 @@
-package com.example.demo.modules.mongodb;
+package com.example.demo.mongodb;
 
 import lombok.Getter;
 import lombok.Setter;

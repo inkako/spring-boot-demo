@@ -1,4 +1,4 @@
-package com.example.demo.modules.txtonimg.request;
+package com.example.demo.txtonimg.request;
 
 import java.util.List;
 

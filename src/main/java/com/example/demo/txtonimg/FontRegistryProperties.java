@@ -1,4 +1,4 @@
-package com.example.demo.modules.txtonimg;
+package com.example.demo.txtonimg;
 
 import lombok.Getter;
 import lombok.Setter;

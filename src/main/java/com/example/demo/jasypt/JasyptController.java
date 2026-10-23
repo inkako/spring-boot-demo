@@ -1,4 +1,4 @@
-package com.example.demo.modules.jasypt;
+package com.example.demo.jasypt;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

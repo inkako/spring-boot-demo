@@ -1,6 +1,6 @@
-package com.example.demo.modules.scheduler;
+package com.example.demo.scheduler;
 
-import com.example.demo.config.TaskScheduleConfigProps;
+import com.example.demo.scheduler.config.TaskScheduleConfigProps;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.TaskScheduler;

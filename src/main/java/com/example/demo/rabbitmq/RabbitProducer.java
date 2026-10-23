@@ -1,4 +1,4 @@
-package com.example.demo.modules.rabbitmq;
+package com.example.demo.rabbitmq;
 
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.stereotype.Component;

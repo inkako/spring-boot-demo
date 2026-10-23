@@ -1,4 +1,4 @@
-package com.example.demo.modules.txtonimg;
+package com.example.demo.txtonimg;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.imageio.ImageIO;
 
 import com.alibaba.fastjson2.JSON;
-import com.example.demo.modules.txtonimg.request.PosterRequest;
+import com.example.demo.txtonimg.request.PosterRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import lombok.RequiredArgsConstructor;

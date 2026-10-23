@@ -1,6 +1,5 @@
-package com.example.demo.service;
+package com.example.demo.resttemplate;
 
-import com.example.demo.dto.CallbackResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 

@@ -1,4 +1,4 @@
-package com.example.demo.modules.rabbitmq;
+package com.example.demo.rabbitmq;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

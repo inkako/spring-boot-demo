@@ -1,4 +1,4 @@
-package com.example.demo.controller;
+package com.example.demo.fastjson;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

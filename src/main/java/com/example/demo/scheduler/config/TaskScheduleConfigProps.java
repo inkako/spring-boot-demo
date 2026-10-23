@@ -1,4 +1,4 @@
-package com.example.demo.config;
+package com.example.demo.scheduler.config;
 
 import lombok.Getter;
 import lombok.Setter;
