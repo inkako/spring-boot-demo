@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/mongodb")
-public class TestMongodbController {
+public class MongodbController {
     private final MongoTemplate mongoTemplate;
 
     @RequestMapping("/test")

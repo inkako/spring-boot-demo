@@ -15,7 +15,7 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("test")
-public class TestController {
+public class RabbitmqController {
     private final RabbitProducer rabbitProducer;
     private final ObjectProvider<RabbitListenerEndpointRegistry> registryProvider;
 

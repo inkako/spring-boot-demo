@@ -8,7 +8,7 @@ import jakarta.annotation.Resource;
 
 @Slf4j
 @RestController
-public class TestController {
+public class RestTemplateController {
     @Resource
     private TestService testService;
 

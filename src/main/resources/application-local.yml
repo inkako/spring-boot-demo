@@ -10,13 +10,7 @@ spring:
       discovery:
         namespace: public
       config:
-        namespace: development
-
-  rabbitmq:
-    host: 127.0.0.1
-    port: 5672
-    username: admin
-    password: admin
+        namespace: public
 
 # history
 #jasypt:
