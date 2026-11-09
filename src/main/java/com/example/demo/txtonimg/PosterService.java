@@ -8,12 +8,14 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.io.UncheckedIOException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.function.Function;
 import javax.imageio.ImageIO;
 
 import com.alibaba.fastjson2.JSON;
@@ -22,6 +24,7 @@ import com.example.demo.txtonimg.request.RenderItem;
 import com.example.demo.txtonimg.request.TextRegion;
 import com.example.demo.txtonimg.response.PosterResponse;
 import com.example.demo.txtonimg.response.PosterResponse.RenderedItem;
+import com.example.demo.util.AsyncTaskUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +44,7 @@ public class PosterService implements ApplicationRunner {
 
     private final TxtOnPicProperties txtOnPicProps;
     private final ApplicationContext applicationContext;
+    private final ThreadPoolExecutor posterRenderExecutor;
 
     /** 背景图模板是固定的，按来源缓存，避免每请求重复下载/解码 */
     private static final ConcurrentHashMap<String, BufferedImage> BG_CACHE = new ConcurrentHashMap<>();
@@ -57,8 +61,11 @@ public class PosterService implements ApplicationRunner {
     }
 
     /**
-     * 合成入口：校验参数 → 逐个渲染项合成海报 → 落盘 → 拼装 CDN 地址。
+     * 合成入口：校验参数 → 并行渲染各渲染项（背景→合成→落盘→拼 CDN 地址）。
      * 成功返回 {@code code=10000}，参数错误 / 合成异常分别返回对应错误码与 message。
+     *
+     * <p>各渲染项相互独立，交给 {@link AsyncTaskUtils} + {@code posterRenderExecutor} 多线程并发，
+     * 返回结果顺序与 {@code renderItems} 一致。
      */
     public PosterResponse compose(PosterRequest req) {
         log.info("Received txtonimg request: {}", JSON.toJSONString(req));
@@ -68,25 +75,45 @@ public class PosterService implements ApplicationRunner {
             return PosterResponse.fail(PosterResponse.CODE_BAD_REQUEST, "请求参数不完整");
         }
         int scale = req.scale == null || req.scale < 1 ? 1 : req.scale;
+        String text = req.text;
 
-        List<RenderedItem> result = new ArrayList<>(req.renderItems.size());
         try {
-            for (RenderItem item : req.renderItems) {
-                // 根级文案注入到继承自 TextRegion 的 text 字段，渲染区域其余几何/样式沿用 item
-                item.text = req.text;
-
-                BufferedImage bg = loadBackground(item.background, txtOnPicProps.getBgPathPrefix());
-                BufferedImage out = TextRenderer.render(bg, List.<TextRegion>of(item), scale);
-                String filename = store(out);
-                // 图片交由 CDN 提供访问，本服务不再托管：preview / download 均指向可配置前缀下的同一地址
-                String url = cdnUrl(filename);
-                result.add(new RenderedItem(item.background, url, url));
-            }
+            // 显式声明为 Function 目标类型，避免与 AsyncTaskUtils 的 Consumer 重载歧义
+            Function<RenderItem, RenderedItem> task = item -> renderOne(item, text, scale);
+            List<RenderedItem> result = AsyncTaskUtils.execute(req.renderItems, task, posterRenderExecutor);
             return PosterResponse.ok(result);
         } catch (Exception e) {
             log.error("[PosterService] 海报合成失败", e);
-            return PosterResponse.fail(PosterResponse.CODE_SERVER_ERROR, e.getMessage());
+            return PosterResponse.fail(PosterResponse.CODE_SERVER_ERROR, rootMessage(e));
         }
+    }
+
+    /**
+     * 渲染单个渲染项：注入根级文案 → 加载背景 → 合成 → 落盘 → 拼 CDN 地址，产出一个 {@link RenderedItem}。
+     * 在无异常声明的 {@code Function} 中执行，将 checked {@link IOException} 包装为 {@link UncheckedIOException}。
+     */
+    private RenderedItem renderOne(RenderItem item, String text, int scale) {
+        // 根级文案注入到继承自 TextRegion 的 text 字段，渲染区域其余几何/样式沿用 item
+        item.text = text;
+        try {
+            BufferedImage bg = loadBackground(item.background, txtOnPicProps.getBgPathPrefix());
+            BufferedImage out = TextRenderer.render(bg, List.<TextRegion>of(item), scale);
+            String filename = store(out);
+            // 图片交由 CDN 提供访问，本服务不再托管：preview / download 均指向可配置前缀下的同一地址
+            String url = cdnUrl(filename);
+            return new RenderedItem(item.background, url, url);
+        } catch (IOException e) {
+            throw new UncheckedIOException("海报合成失败: " + item.background, e);
+        }
+    }
+
+    /** 提取根因消息：CompletableFuture.join 会将业务异常包裹为 CompletionException */
+    private static String rootMessage(Throwable e) {
+        Throwable cause = e;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        return cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage();
     }
 
     /**
