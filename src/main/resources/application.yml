@@ -13,3 +13,8 @@ txtonimg:
     serif: classpath:fonts/NotoSerifSC-SemiBold.ttf     # 衬线（思源宋体）
     rounded: classpath:fonts/ResourceHanRoundedCN-Medium.ttf  # 圆体
     oblique: classpath:fonts/SmileySans-Oblique.ttf     # 斜体（得意黑）
+  bg-path-prefix: /home/ako/zone/spring-boot-demo/src/main/resources/static/textonimg/
+  # 合成海报落盘目录（相对进程工作目录），作为 CDN 回源目录
+  output-dir: /home/ako/zone/spring-boot-demo/src/main/resources/static/output/
+  # 对外图片地址（CDN）前缀，picPreviewUrl/picDownloadUrl = 本前缀 + 文件名；本服务不托管图片访问
+  url-prefix: https://cdn.example.com/txtonimg/

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 
 @Slf4j
-@Component
+//@Component
 //@RefreshScope
 @RequiredArgsConstructor
 public class TriggerTask implements SchedulingConfigurer {

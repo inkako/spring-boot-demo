@@ -52,7 +52,7 @@ public final class TextRenderer {
 
     /**
      * 注册一个字体类型别名及其对应的 1pt 基字体。
-     * 启动时由 {@link FontRegistryProperties} 驱动批量调用，也可手动注册。
+     * 启动时由 {@link TxtOnPicProperties} 驱动批量调用，也可手动注册。
      */
     public static void registerFontType(String type, Font baseFont) {
         FONT_TYPE_REGISTRY.put(type, baseFont);
@@ -151,24 +151,32 @@ public final class TextRenderer {
     // ---------------------------------------------------------------- 绘制单个区域
 
     private static void drawRegion(Graphics2D g, TextRegion r, int scale) {
-        if (r == null || r.text == null || r.text.isEmpty() || r.w <= 0 || r.h <= 0) {
+        if (r == null || r.text == null || r.text.isEmpty()) {
+            return;
+        }
+        // 包装类型字段在内部构造路径（如 warmUp）可能为 null，统一兜底
+        int bx = nz(r.x), by = nz(r.y), bw = nz(r.w), bh = nz(r.h);
+        if (bw <= 0 || bh <= 0) {
             log.warn("missing necessary parameters for text region");
             return;
         }
+        float fontSize = r.fontSize == null ? 48f : r.fontSize;
+        float lineHeight = r.lineHeight == null ? 1.5f : r.lineHeight;
+        boolean clip = r.clipOverflow == null || r.clipOverflow;
 
-        Font font = resolveFont(r).deriveFont(toPoint(r.fontSize, r.fontSizeUnit) * scale);
+        Font font = resolveFont(r).deriveFont(toPoint(fontSize, r.fontSizeUnit) * scale);
         FontRenderContext frc = g.getFontRenderContext();
 
-        float boxX = (float) r.x * scale;
-        float boxY = (float) r.y * scale;
-        float boxW = (float) r.w * scale;
-        float boxH = (float) r.h * scale;
+        float boxX = bx * (float) scale;
+        float boxY = by * (float) scale;
+        float boxW = bw * (float) scale;
+        float boxH = bh * (float) scale;
 
         // 1) 按区域宽度自动换行
         List<String> lines = wrap(r.text, font, frc, boxW);
 
         // 2) 行盒高度：以字号为基准的倍数行高，而不是字体天然高度
-        float lineH = toPoint(r.fontSize, r.fontSizeUnit) * scale * r.lineHeight;
+        float lineH = toPoint(fontSize, r.fontSizeUnit) * scale * lineHeight;
         float blockH = lineH * lines.size();
 
         // 3) 框内垂直对齐 → 首行行盒顶部
@@ -184,7 +192,7 @@ public final class TextRenderer {
         LineMetrics lm = font.getLineMetrics("字", frc);
         for (int i = 0; i < lines.size(); i++) {
             float lineTop = top + lineH * i;
-            if (r.clipOverflow && lineTop + lineH > boxY + boxH + 0.5f) {
+            if (clip && lineTop + lineH > boxY + boxH + 0.5f) {
                 break; // 超出区域，丢弃后续行
             }
             // 行盒内垂直居中后再落到 baseline
@@ -213,20 +221,21 @@ public final class TextRenderer {
      * 字体解析优先级：fontType（配置预加载）> fontPath（外部文件）> fontFamily（系统字体）
      */
     private static Font resolveFont(TextRegion r) {
+        int style = r.fontStyle == null ? Font.PLAIN : r.fontStyle;
         // 1) 按字体类型别名从预加载注册表中选取
         if (r.fontType != null && !r.fontType.isEmpty()) {
             Font typed = FONT_TYPE_REGISTRY.get(r.fontType);
             if (typed != null) {
-                return typed;
+                return style == Font.PLAIN ? typed : typed.deriveFont(style);
             }
             log.warn("[TextRenderer] 未找到字体类型 [{}]，降级到 fontFamily / fontPath", r.fontType);
         }
         // 2) 按外部文件路径加载
         if (r.fontPath != null && !r.fontPath.isEmpty()) {
-            return loadFromFile(r.fontPath, r.fontFamily, r.fontStyle);
+            return loadFromFile(r.fontPath, r.fontFamily, style);
         }
         // 3) 按系统字体族名加载
-        return loadFromSystem(r.fontFamily, r.fontStyle);
+        return loadFromSystem(r.fontFamily, style);
     }
 
     /**
@@ -372,6 +381,11 @@ public final class TextRenderer {
     }
 
     // ---------------------------------------------------------------- 工具
+
+    /** Integer → int，null 视为 0（供内部构造路径的包装类型字段兜底） */
+    private static int nz(Integer v) {
+        return v == null ? 0 : v;
+    }
 
     /**
      * px(1/96in) / pt(1/72in) → AWT point。设计稿坐标一律按 px 处理

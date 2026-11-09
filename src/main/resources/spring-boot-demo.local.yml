@@ -4,19 +4,19 @@ spring:
     port: 5672
     username: rabbitmq
     password: rabbitmq
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+      client:
+        config:
+          default:
+            connect-timeout: 2000
+            read-timeout: 20000
 
 task:
   scheduler:
     fixedRate: 4000
-
-feign:
-  circuitbreaker:
-    enabled: true
-  client:
-    config:
-      default:
-        connect-timeout: 10000
-        read-timeout: 60000
 
 # 微服务容错体系
 # ├── 熔断（Circuit Breaker）+ 降级（Fallback）    ← Resilience4j
