@@ -33,8 +33,6 @@ import org.springframework.stereotype.Service;
 
 /**
  * 文字贴图业务服务：承载海报合成、背景图缓存、落盘与 CDN 地址拼装，以及启动时的字体预加载 / 预热。
- *
- * <p>控制器只做请求转发，所有业务处理集中于此。
  */
 @Slf4j
 @Service
@@ -141,7 +139,7 @@ public class PosterService implements ApplicationRunner {
     }
 
     private Path resolveOutputDir() {
-        Path dir = Paths.get(txtOnPicProps.getOutputDir()).toAbsolutePath().normalize();
+        Path dir = Paths.get(txtOnPicProps.getOutputPathPrefix()).toAbsolutePath().normalize();
         try {
             Files.createDirectories(dir);
         } catch (IOException e) {
@@ -160,7 +158,6 @@ public class PosterService implements ApplicationRunner {
                 if (k.startsWith("http://") || k.startsWith("https://")) {
                     return ImageIO.read(URI.create(k).toURL());
                 }
-                log.info("Loading background image: {}", bgPathPrefix + k);
                 return ImageIO.read(new java.io.File(bgPathPrefix + k));
             } catch (IOException e) {
                 throw new IllegalStateException("背景图加载失败: " + k, e);

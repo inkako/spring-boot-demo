@@ -47,7 +47,7 @@ public class TxtOnPicProperties {
      * 合成海报的落盘目录，图片将写入此目录（通常作为 CDN 回源目录）。
      * <p>支持相对（相对进程工作目录）或绝对路径，不存在时自动创建。默认 {@code ./poster-output}。
      */
-    private String outputDir = "./poster-output";
+    private String outputPathPrefix = "./poster-output";
 
     /**
      * 对外图片地址（CDN）前缀。响应中的 picPreviewUrl / picDownloadUrl = 本前缀 + 落盘文件名。
